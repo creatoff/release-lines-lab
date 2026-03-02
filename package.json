@@ -1,0 +1,10 @@
+{
+  "name": "release-lines-lab",
+  "private": true,
+  "version": "0.0.0-dev",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "version": "node scripts/resolve-version.mjs"
+  }
+}
