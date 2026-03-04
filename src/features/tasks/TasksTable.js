@@ -1,4 +1,4 @@
-import { renderRows, totalLabel } from '../../shared/table.js';
+import { renderRows, totalLabel } from '../../shared/ui/table/primitives.js';
 
 export function TasksTable(state) {
   const columns = ['name', 'trigger', 'lastRun'];

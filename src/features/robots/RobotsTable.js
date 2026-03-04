@@ -1,4 +1,4 @@
-import { renderRows, totalLabel } from '../../shared/table.js';
+import { renderRows, totalLabel } from '../../shared/ui/table/primitives.js';
 
 export function RobotsTable(state) {
   const columns = ['name', 'machine', 'status'];
