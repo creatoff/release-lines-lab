@@ -1,3 +1,8 @@
+# 4.26.9.0
+
+#### New Features
+    * (#10060) Закрепление разделов меню (@Alex Frontend)
+
 # 4.26.8.0
 
 #### New Features
