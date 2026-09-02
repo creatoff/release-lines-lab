@@ -2,7 +2,7 @@ export function LogTable(state) {
   return {
     rows: state.events.map((e) => ({
       time: e.time,
-      message: e.message.slice(0, 40),
+      message: e.message,
     })),
   };
 }
