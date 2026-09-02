@@ -4,5 +4,6 @@ export function renderRows(rows, columns) {
 
 export function totalLabel(total, filtered) {
   if (total === null || total === undefined) return String(filtered);
+  if (total === 0) return String(filtered);
   return filtered + ' из ' + total;
 }
