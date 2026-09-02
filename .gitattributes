@@ -1,0 +1,3 @@
+# CHANGELOG склеивается union-драйвером: строки обеих сторон сохраняются,
+# конфликт не возникает ни при merge, ни при cherry-pick.
+CHANGELOG.md merge=union
