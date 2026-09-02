@@ -1,0 +1,12 @@
+# CI-прогон автомержа с конфликтом (Actions run 33660563270)
+
+стартуем с: releases/v4.26.7.3
+цепочка: releases/v4.26.7.3 -> releases/v4.26.8.0 -> releases/v4.26.9.0 -> main
+releases/v4.26.7.3 -> releases/v4.26.8.0: КОНФЛИКТ, откатано
+Нужен человек: открыть PR releases/v4.26.7.3 -> releases/v4.26.8.0 и разобрать вручную.
+##CONFLICT|releases/v4.26.7.3|releases/v4.26.8.0|src/features/logs/LogTable.js
+﻿2026-09-02T17:22:42.7891087Z ##[group]Run marker=$(grep '^##CONFLICT|' forward.log | head -1)
+^[[36;1mmarker=$(grep '^##CONFLICT|' forward.log | head -1)^[[0m
+конфликт: releases/v4.26.7.3 -> releases/v4.26.8.0
+https://github.com/creatoff/release-lines-lab/pull/1
+##[warning]Цепочка остановлена конфликтом, открыт PR

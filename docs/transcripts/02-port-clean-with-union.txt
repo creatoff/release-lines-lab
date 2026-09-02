@@ -1,0 +1,31 @@
+$ git switch releases/v4.26.7.3
+Switched to branch 'releases/v4.26.7.3'
+
+$ cat .gitattributes
+# CHANGELOG склеивается union-драйвером: строки обеих сторон сохраняются,
+# конфликт не возникает ни при merge, ни при cherry-pick.
+CHANGELOG.md merge=union
+
+$ git cherry-pick -x main   # fix: keep filter state on refresh (#10090)
+Auto-merging CHANGELOG.md
+[releases/v4.26.7.3 128d372] fix: keep filter state on refresh (#10090)
+ Date: Wed Sep 2 20:11:12 2026 +0300
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+exit code: 0
+
+$ git diff --name-only --diff-filter=U   # конфликтных файлов
+(пусто)
+
+$ grep -c '^<<<<<<<' CHANGELOG.md   # маркеров конфликта
+0
+0
+
+$ sed -n '1,8p' CHANGELOG.md
+# 4.26.7.3
+
+#### Bugs
+    * (#10080) В логах роботов не весь текст сообщения (@Alex Frontend)
+    * (#10090) Фильтры таблицы сбрасываются при обновлении (@Kim Frontend)
+
+# 4.26.7.0
+

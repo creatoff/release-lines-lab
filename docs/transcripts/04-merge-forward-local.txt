@@ -1,0 +1,14 @@
+$ node scripts/merge-forward.mjs --from releases/v4.26.7.3 --apply --push
+цепочка: releases/v4.26.7.3 -> releases/v4.26.8.0 -> releases/v4.26.9.0 -> main
+старт   : releases/v4.26.7.3  [apply + push]
+
+releases/v4.26.7.3 -> releases/v4.26.8.0: смерджено (4 коммит(ов))
+releases/v4.26.8.0 -> releases/v4.26.9.0: смерджено (7 коммит(ов))
+releases/v4.26.9.0 -> main: смерджено (10 коммит(ов))
+
+push releases/v4.26.8.0: ок
+push releases/v4.26.9.0: ок
+push main: ок
+
+готово: обновлены releases/v4.26.8.0, releases/v4.26.9.0, main
+exit=0

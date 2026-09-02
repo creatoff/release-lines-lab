@@ -1,0 +1,40 @@
+$ git switch releases/v4.26.7.3
+Switched to branch 'releases/v4.26.7.3'
+
+$ git cherry-pick -x main   # fix: show full message text in log table (#10080)
+Auto-merging CHANGELOG.md
+CONFLICT (content): Merge conflict in CHANGELOG.md
+error: could not apply 919a5f2... fix: show full message text in log table (#10080)
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm <pathspec>", then run
+hint: "git cherry-pick --continue".
+hint: You can instead skip this commit with "git cherry-pick --skip".
+hint: To abort and get back to the state before "git cherry-pick",
+hint: run "git cherry-pick --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+exit code: 1
+
+$ git diff --name-only --diff-filter=U
+CHANGELOG.md
+
+$ sed -n '1,20p' CHANGELOG.md
+# 4.26.7.3
+
+#### Bugs
+<<<<<<< HEAD
+=======
+    * (#10080) В логах роботов не весь текст сообщения (@Alex Frontend)
+
+#### Changed
+    * (#10075) Ленивая инициализация стора (@Bo Frontend)
+
+# 4.26.9.0
+
+#### New Features
+    * (#10060) Закрепление разделов меню (@Alex Frontend)
+    * (#10070) Колонки метаданных очереди (@Bo Frontend)
+
+# 4.26.8.0
+
+#### New Features
+    * (#10040) Инлайновые фильтры таблиц (@Kim Frontend)

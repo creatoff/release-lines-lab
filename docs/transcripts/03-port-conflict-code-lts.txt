@@ -1,0 +1,44 @@
+# На LTS ту же функцию totalLabel уже правили по-своему (#10098).
+# Теперь портируем правку main #10100, которая трогает те же строки.
+
+$ git cherry-pick -x main
+Auto-merging CHANGELOG.md
+Auto-merging src/shared/table.js
+CONFLICT (content): Merge conflict in src/shared/table.js
+error: could not apply 7c54cf2... fix: show only filtered count when total is empty (#10100)
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm <pathspec>", then run
+hint: "git cherry-pick --continue".
+hint: You can instead skip this commit with "git cherry-pick --skip".
+hint: To abort and get back to the state before "git cherry-pick",
+hint: run "git cherry-pick --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+exit code: 1
+
+$ git diff --name-only --diff-filter=U
+src/shared/table.js
+
+$ sed -n '1,14p' src/shared/table.js
+export function renderRows(rows, columns) {
+  return rows.map((row) => columns.map((c) => String(row[c] ?? '')).join(' | '));
+}
+
+export function totalLabel(total, filtered) {
+<<<<<<< HEAD:src/shared/table.js
+  if (!total) return filtered + ' из ?';
+=======
+  if (total === null || total === undefined) return String(filtered);
+  if (total === 0) return String(filtered);
+>>>>>>> 7c54cf2 (fix: show only filtered count when total is empty (#10100)):src/shared/ui/table/primitives.js
+  return filtered + ' из ' + total;
+}
+
+# CHANGELOG при этом union склеил без конфликта:
+$ sed -n '1,7p' CHANGELOG.md
+# 4.0.17
+
+#### Bugs
+    * (#10098) Счётчик таблицы при неизвестном total (@Kim Frontend)
+    * (#10080) В логах роботов не весь текст сообщения (@Alex Frontend)
+    * (#10100) Пустое значение totalCount отображается как 0 (@Alex Frontend)
+    * (#10095) Колонка последней активности робота (@Bo Frontend)
