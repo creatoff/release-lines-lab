@@ -6,7 +6,6 @@ export function inlineFilters(initial) {
       value = { ...value, ...patch };
     },
     refresh: () => {
-      value = { ...initial };
       return value;
     },
   };
