@@ -1,0 +1,85 @@
+name: Merge forward
+
+# Прототип того, что переносится в Azure Pipelines: push в релизную линию
+# пробует влить её в следующую вверх по цепочке. Чисто — пушит сам.
+# Конфликт — откатывает, открывает PR и оставляет человеку.
+
+on:
+  push:
+    branches:
+      - 'releases/**'
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Линия, с которой начать (пусто = текущая ветка)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Настроить git-идентити бота
+        run: |
+          git config user.name 'merge-forward bot'
+          git config user.email 'merge-forward@example.invalid'
+
+      - name: Определить исходную линию
+        id: src
+        run: |
+          from='${{ inputs.from }}'
+          if [ -z "$from" ]; then from="${GITHUB_REF#refs/heads/}"; fi
+          echo "from=$from" >> "$GITHUB_OUTPUT"
+          echo "стартуем с: $from"
+
+      - name: Влить вверх по цепочке
+        id: run
+        run: |
+          set +e
+          node scripts/merge-forward.mjs --from '${{ steps.src.outputs.from }}' --apply --push | tee forward.log
+          code=${PIPESTATUS[0]}
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Открыть PR на конфликте
+        if: steps.run.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          line=$(grep '^##CONFLICT##' forward.log | head -1)
+          src=$(echo "$line" | cut -d'#' -f9)
+          dst=$(echo "$line" | cut -d'#' -f11)
+          files=$(echo "$line" | cut -d'#' -f13)
+          echo "конфликт: $src -> $dst"
+          existing=$(gh pr list --base "$dst" --head "$src" --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            echo "PR #$existing уже открыт, добавляю комментарий"
+            gh pr comment "$existing" --body "Автомерж снова упёрся в конфликт. Файлы: $files"
+          else
+            gh pr create --base "$dst" --head "$src" \
+              --title "merge-forward: $src -> $dst" \
+              --body "Автоматический merge-forward остановился на конфликте.
+
+Конфликтные файлы:
+\`\`\`
+$(echo "$files" | tr ',' '\n')
+\`\`\`
+
+Разберите вручную и смерджите — дальше цепочка пойдёт сама."
+          fi
+
+      - name: Итог
+        run: |
+          if [ '${{ steps.run.outputs.code }}' = '2' ]; then
+            echo '::warning::Цепочка остановлена конфликтом, открыт PR'
+          else
+            echo 'Цепочка пройдена без конфликтов'
+          fi
