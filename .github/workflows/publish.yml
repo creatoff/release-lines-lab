@@ -1,0 +1,122 @@
+name: Publish
+
+# Прототип стадии доставки: собрать линию -> дождаться аппрува ->
+# поставить тег на ТОТ САМЫЙ коммит, который собрали.
+#
+# Ключевая деталь: SHA фиксируется на шаге сборки и передаётся дальше как output.
+# Разрешать имя ветки повторно нельзя — она к моменту публикации могла уехать,
+# именно от этого тег и защищает.
+
+on:
+  workflow_dispatch:
+    inputs:
+      line:
+        description: 'Линия, которая уезжает в деливери'
+        required: true
+        type: choice
+        options:
+          - releases/v4.26.7.3
+          - releases/v4.26.8.0
+          - releases/v4.26.9.0
+          - lts/v4.0.17
+          - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      sha: ${{ steps.meta.outputs.sha }}
+      artifact: ${{ steps.meta.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.line }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Вычислить версию и зафиксировать коммит
+        id: meta
+        env:
+          BUILD_BRANCH: ${{ inputs.line }}
+        run: |
+          version=$(node scripts/resolve-version.mjs | awk '{print $1}')
+          sha=$(git rev-parse HEAD)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "artifact=primo-rpa-orchestrator-ui-$version-linux.zip" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Сборка"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| линия | \`${{ inputs.line }}\` |"
+            echo "| версия | \`$version\` |"
+            echo "| коммит | \`$sha\` |"
+            echo "| артефакт | \`primo-rpa-orchestrator-ui-$version-linux.zip\` |"
+            echo ""
+            echo "Версия выведена без правки \`package.json\` — там во всех линиях \`0.0.0-dev\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Собрать
+        env:
+          BUILD_BRANCH: ${{ inputs.line }}
+        run: node scripts/build.mjs
+
+      - name: Упаковать артефакт
+        run: |
+          mkdir -p dist
+          cp -r build dist/
+          cp package.json dist/
+        shell: bash
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact }}
+          path: dist
+
+  approve:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release-approval
+    steps:
+      - name: Аппрув получен
+        run: |
+          echo "Публикация подтверждена"
+          echo "версия: ${{ needs.build.outputs.version }}"
+          echo "коммит: ${{ needs.build.outputs.sha }}"
+
+  tag:
+    needs: [build, approve]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Поставить тег на собранный коммит
+        run: |
+          set -e
+          version='${{ needs.build.outputs.version }}'
+          sha='${{ needs.build.outputs.sha }}'
+          tag="v${version}+build.${{ github.run_number }}"
+
+          git config user.name 'publish bot'
+          git config user.email 'publish@example.invalid'
+          git tag -a "$tag" "$sha" -m "Опубликовано клиентам. Линия ${{ inputs.line }}, прогон ${{ github.run_id }}."
+          git push origin "$tag"
+
+          {
+            echo "### Тег поставлен"
+            echo ""
+            echo "- тег: \`$tag\`"
+            echo "- коммит: \`$sha\`"
+            echo ""
+            echo "Теперь \`git checkout $tag\` даёт ровно то, что уехало заказчику."
+          } >> "$GITHUB_STEP_SUMMARY"
