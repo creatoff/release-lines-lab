@@ -32,8 +32,25 @@ function gitTry(a) {
   }
 }
 
+// В CI склонирована одна ветка, остальные линии есть только как origin/*.
+// Заводим локальные ветки, иначе rev-list и merge не найдут ссылку по имени.
+function ensureLocal(branch) {
+  const has = gitTry(['rev-parse', '--verify', '--quiet', 'refs/heads/' + branch]);
+  if (has.ok && has.out) return true;
+  const remote = gitTry(['rev-parse', '--verify', '--quiet', 'refs/remotes/origin/' + branch]);
+  if (!remote.ok || !remote.out) return false;
+  return gitTry(['branch', branch, 'origin/' + branch]).ok;
+}
+
 const cfg = JSON.parse(fs.readFileSync('.release-lines.json', 'utf8'));
 const chain = cfg.chain;
+
+for (const b of chain) {
+  if (!ensureLocal(b)) {
+    console.log(`Линия ${b} не найдена ни локально, ни в origin — пропускаю цепочку.`);
+    process.exit(1);
+  }
+}
 
 const from = value('--from') || git(['rev-parse', '--abbrev-ref', 'HEAD']);
 const startIndex = chain.indexOf(from);
@@ -97,7 +114,7 @@ for (let i = startIndex; i < chain.length - 1; i++) {
     conflicts.forEach((f) => console.log('    ' + f));
     console.log('');
     console.log(`Нужен человек: открыть PR ${src} -> ${dst} и разобрать вручную.`);
-    console.log(`##CONFLICT##${src}##${dst}##${conflicts.join(',')}`);
+    console.log(`##CONFLICT|${src}|${dst}|${conflicts.join(',')}`);
     process.exit(2);
   }
 }
